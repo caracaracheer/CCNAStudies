@@ -123,7 +123,13 @@ STP (Spanning Tree Protocol)
 			Refers to the overall cost for the switch to reach the root.
 			The configuration BPDU carries the root path cost which increments as the BPDU is forwarded throughout the network.
 			RPC increases as BPDU reaches switch NOT when it leaves the switch.
+		Choosing the root port
+			1. Choose the port connected to the path with the lowest root path cost
+			2. Choose the port receiving the BPDU with the lowest BID
+			3. Choose the port receiving the BPDU from the port with the lowest port priority (NOT cost. It is named "Prio.Nbr"). Check this using <show spanning vlan x detail>
+			4. Choose the port with the lowest port ID. (Named "Prio.Nbr" e.g. 128.13 vs 128.14)
 	Commands
 		show spanning vlan x
 		show spanning-tree vlan x
 		show spanning vlan x root
+		show spanning vlan x detail
