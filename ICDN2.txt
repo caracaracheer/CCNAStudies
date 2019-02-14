@@ -1,0 +1,129 @@
+VTP (VLAN Trunking Protocol)
+	Let devices have a synced view of VLANs in the network.
+	When one switch joins a VTP domain, it advertises a VTP Ad to other switches. If those switches doesn't belong to a domain already, it will join that domain.
+	VTP Modes
+		Restrict switches in a VTP domain to certain functions according to its mode.
+		You can add ports to a VLAN on all the modes.
+		You must have a switch in VTP domain running server mode.
+		Server mode
+			A switch in server mode can create, delete and modify VLANs.
+		Client mode
+			Cannot do anything that server mode can do.
+		Transparent mode
+			A switch in transparent mode does not fully participate in the VTP domain.
+			Transparent switches do not sync their VTP database, do not advertise their VLAN information.
+			Transparent switches will only forward VTP ads out its other trunks.
+		Off mode
+			Disable VTP on the switch, the switch will not forward VTP advertisements.
+	VTP Advertisement
+		VTP ads are multicasts that are sent out only trunk links.
+		These ads carry a configuration revision number to advertise the latest VTP version.
+		These ads are sent whenever there is a change in the VTP database.
+		Process
+			1. SW1 makes a VTP change.
+			2. SW1 sends VTP ad with CRN increased by 1 to trunk links.
+			3. SW2 receives VTP ad and if the CRN is higer, it increase its CRN accordingly as well as update its VTP database.
+		*A switch that in going to be inserted to a new VTP domain have to watched carefully.
+			If the switch have a higher CRN numbers, it will mess up the other switches updates.
+			The switch have to set the CRN to zero.
+			CRN is kept in NVRAM.
+			To properly ensure CRN is set to zero,
+				1. Change the VTP domain name to a nonexistent domain, then change it back to the original anme.
+				2. Change the vtp mode from server to transparent, then back to server.
+				<write erase> (Remove all configuration files and initialize switch clean.) does not delete vlan.dat which contains vlans information.
+				<delete vlan.dat> and <reload> to fully clean switch.
+	VTP Password
+		VTP passwords are carried in the VTP ads.
+		The password of receiving switch must be the same as the password of the switch that advertised.
+			*Switches will not update VTP if password does not match the advertised.
+			*However, password does not trigger VTP ads. A force update must be done by making a new VLAN and deleting it.
+		Commands
+			vtp password (password e.g. CCNA)
+			vtp password (password e.g. CCNA) hidden
+				Only version 3 VTP switches can have encrypted VTP passwords
+			show vtp password
+	VTP Versions
+		Version 1 is run by default.
+		It is recommended to run the same VTP versions on all the switches to avoid any compatibility problems.
+		Commands
+			vtp version (vtp version e.g. 3)
+	VTP Pruning
+		Switches can block traffic from unnecessary VLANs (block from source) to reduce bandwidth.
+		Commands
+			vtp pruning
+			int x > switchport trunk pruning vlan (vlan number)
+				Control which vlan to prune
+	Commands
+		vtp domain (domain name e.g. CCNA)
+		show vtp status
+
+STP (Spanning Tree Protocol)
+	L3 routing protocols allow us to use secondary paths in addition to primary paths, making equal and unequal cost load balancing possible.
+	L2 routing protocols allow us to use secondary paths but will not use those paths in addition to primary paths.
+	STP blocks ports on valid but less desirable paths. STP unblocks these paths when primary paths become unavailable.
+	STP analyze port speeds and determine which ports should be open/closed.
+	STP will leave one loop-free path between any two endpoints in the switching network.
+	Characteristics
+		The root port is the port that is connected to the root bridge.
+		All port on the root bridge will be on forwarding mode.
+		Root ports on non-root-bridge switches are always on forwarding mode.
+	Switching Loops
+		Happens on layer 2.
+		Causes broadcast storm, frame flooding, wasted bandwidth, etc.
+	Routing Loops
+		Happens on layer 3.
+	Port States
+		When STP brings a port of blocking mode, it goes to listening mode first before going to forwarding mode.
+		Disabled
+			You will not see this in show spanning vlan.
+			A disabled port is a port that have been administratively shutdown. It will not forward frames or run STP.
+		Blocking
+			Blocked port can only accept BPDUs from neighbouring switches.
+			It cannot forward frames, receive frames therefore no dynamically learning MAC addresses.
+		Listening
+			A listening port listens for BPDUs and also sends BPDUs and can participate in root bridge election.
+			It cannot forward frames, receive frames therefore no dynamically learning MAC addresses.
+		Learning
+			A learning port is not forwarding frames but it is learning MAC addresses. It can also send and receive BPDUs.
+		Forwarding
+			Forwarding port forwards and receive frames, send and receive BPDUs and continue to learn MAC addresses.
+	Process
+		BPDUs and Root Bridge Election.
+			STP will determine a root bridge (switch) for every VLAN via an election.
+			The election process is carried out via the exchange of BPDUs.
+			Only root bridge will originate BPDUs. Non-roots will only receive and forward copies of that BPDU.
+			The root bridge will also determine the STP timers.
+			Each switch has a Bridge ID (BID). The BID is a combination of a 2-byte priority value and the switch's 6-byte MAC address.
+			If the priority is left at default for all switch, the MAC address wil determine the root bridge.
+			Ensure that root bridge should be the more powerful switches.
+			
+			Election Process
+				Each switch reads the root bridge BID and compares that with its own.
+				If the incoming root bridge BID is lower, it knows that that switch is the root.
+				It forwards this information to other switches.
+				If not, it wil announce itself as the root.
+				This will continue until all switches agrees which is the root.
+	STP Timer
+		Timers must be change on the root. Timers on non-root with only come into effect when it becomes the root.
+		Hello Time
+			Defines how often the root bridge originates BPDUs. Default setting: 2 seconds
+		Forward Delay
+			Length of the listening and learning port stages. This helps protect against switching loops. Default setting: 15 seconds
+		Maximum Age
+			How long a switch retain BPDU before discarding. Default setting: 20 seconds
+		Commands
+			spanning vlan (vlan number e.g. 1) forward-time (number of seconds)
+			spanning vlan (vlan number e.g. 1) hello-time (number of seconds)
+			spanning vlan (vlan number e.g. 1) max-age (number of seconds)
+	Port Cost/Root Path Cost
+		Every STP-enabled port have an assigned port cost which is used to arrive at the switch's root path cost.
+		It is a local value that is not advertised.
+		The faster the port, the lower the port cost.
+		Root Path Cost
+			Refers to the overall cost for the switch to reach the root.
+			The configuration BPDU carries the root path cost which increments as the BPDU is forwarded throughout the network.
+			RPC increases as BPDU reaches switch NOT when it leaves the switch.
+	Commands
+		show spanning vlan x
+		show spanning-tree vlan x
+		show spanning vlan x root
