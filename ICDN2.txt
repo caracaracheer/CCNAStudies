@@ -219,3 +219,34 @@ Etherchannels
 		Commands
 			channel-group (group number) mode active/passive/desirable/auto
 			show int port-channel (group number)
+Rapid Spanning-Tree Protocol
+	Comparison
+		Normally in STP, ports between non root switches have one single designated port with the others being blocked ports.
+		In RSTP, blocked ports are used as alternate paths to the root switch instead.
+		
+		STP ports state "disabled", "blocking" and "listening" are combined into the RSTP state discarding, the initial RSTP port state.
+		RSTP ports transition from discarding to learning, where incoming frames are discarded but the MAC addresses are being learned by the switch.
+		RSTP ports then transition from learning to forwarding state.
+		
+		STP: disabled > blocking > listening > learning > forwarding
+		RSTP: discarding > learning > forwarding
+
+		STP root bridge generates and transmits BPDUs every 2s and the non-root bridges read and relay the BPDUs.
+		RSTP-enabled switches generate a BPDU every 2s regardless of whether they received a BPDU from the root
+		Every switch expects to see a BPDU from its neighbor every 2s and if 3 BPDUs are missed, the links are considered to be down.
+		This behaviour allows for switches to check for link failures faster.
+		The switch then ages all information concerning the port which cuts down the default STP timer from 20s to 6s in RSTP.
+	Port Types
+		RSTP have two unique port types, "edge ports" and "point to point ports"
+			P2P ports
+				A p2p port is any port running in full-duplex mode.
+				Any port running half duplex are considered shared ports and must run STP rather than RSTP.
+			Edge ports
+				Only a single host will connected to an edge port.
+				When edge ports move into forwarding mode, RSTP does not consider than a change in the network and does not send out any notification.
+				When non edge ports move into forwarding mode, a TCN (Topology Change Notification) BPDU is sent by RSTP to all non-edge ports designated ports.
+	Commands
+		spanning mode rapid-pvst
+			Configure to use RSTP.
+		show spanning summary
+			Check for "switch is in rapid-pvst mode"
