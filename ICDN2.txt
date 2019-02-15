@@ -63,10 +63,6 @@ STP (Spanning Tree Protocol)
 	STP blocks ports on valid but less desirable paths. STP unblocks these paths when primary paths become unavailable.
 	STP analyze port speeds and determine which ports should be open/closed.
 	STP will leave one loop-free path between any two endpoints in the switching network.
-	Characteristics
-		The root port is the port that is connected to the root bridge.
-		All port on the root bridge will be on forwarding mode.
-		Root ports on non-root-bridge switches are always on forwarding mode.
 	Switching Loops
 		Happens on layer 2.
 		Causes broadcast storm, frame flooding, wasted bandwidth, etc.
@@ -87,6 +83,12 @@ STP (Spanning Tree Protocol)
 			A learning port is not forwarding frames but it is learning MAC addresses. It can also send and receive BPDUs.
 		Forwarding
 			Forwarding port forwards and receive frames, send and receive BPDUs and continue to learn MAC addresses.
+
+		Root Bridge Context
+			The root port is the port that is connected to the root bridge.
+			All port on the root bridge will be on forwarding mode.
+			Root ports on non-root-bridge switches are always on forwarding mode.
+			Once the root ports are determined for non-root switches, the link between two non-root switches will have one blocked port and one forwarding port (based on lowest path cost and tiebreakers).
 	Process
 		BPDUs and Root Bridge Election.
 			STP will determine a root bridge (switch) for every VLAN via an election.
@@ -128,8 +130,92 @@ STP (Spanning Tree Protocol)
 			2. Choose the port receiving the BPDU with the lowest BID
 			3. Choose the port receiving the BPDU from the port with the lowest port priority (NOT cost. It is named "Prio.Nbr"). Check this using <show spanning vlan x detail>
 			4. Choose the port with the lowest port ID. (Named "Prio.Nbr" e.g. 128.13 vs 128.14)
+		Port Speed/Cost
+			10 Gbps		2
+			1 Gbps		4
+			100 Mbps	19
+			10 Mbps		100
+		Commands
+			spanning cost (path cost)
+				Change path cost of an interface
+	Load Balancing
+		Commands
+			interface > spanning vlan (vlan number) cost (path cost)
+				Change vlan path cost. (Used to enable load balancing)
+			show spanning vlan x
+				You can check the path cost of x vlan using this.
+	Manual Root Switch Selection
+		A secondary root can be configured to take over if the primary root goes down.
+		If priority of root is greater than 24576, the priority of the new root will be 24756
+		Else, the new root priority will be root priority - 4096
+		Commands
+			spanning vlan (vlan number) root primary/secondary
+				Set current switch to be primary/secondary root of a vlan
+			spanning vlan (vlan number) priority (priority number)
+				Set the current switch priority.
+				Must enter the priority in increments of 4096
+	Portfast
+		Allows a port running STP to go directly from blocking to forwarding mode.
+		If you have a host that have trouble getting IP address via DHCP, portfast may be able to fix the problem.
+		STP learning and listening stages can interfere with host's DHCP address acquisition process.
+		Commands
+			interface > spanning-tree portfast ?trunk
+			spanning-tree portfast default
+				Enable portfast by default on all access ports
+			show spanning (interface) portfast
+	Root Guard
+		If there is a designated root switch and you do not want any other switches to become root, Root Guard can be used.
+		Root guard blocks superior BPDUs from certain ports to prevent root bridge election.
+		Commands
+			interface > spanning guard root
+			show spanning incon
+	BPDU Guard
+		Blocks all BPDU from a BPDU enabled port.
+		Puts port receiving BPDU into err-disabled state.
+		Commands
+			interface > spanning bpduguard enable
+			spanning portfast bpduguard default
+				Enable bpduguard to protect portfast ports from triggering switching loops
 	Commands
 		show spanning vlan x
 		show spanning-tree vlan x
 		show spanning vlan x root
 		show spanning vlan x detail
+
+Etherchannels
+	Etherchannels are logical bundling of 2-8 parallel trunk ports running between two switches.
+	Allows to use more of the available bandwidth and avoid timer delays.
+	*Ports placed inside an EC should be running at the same speed and have the same duplex settings.
+	If root port goes down, secondary port takes some time to get up. Etherchannel helps with this delay.
+	Cost of EC will change if ports in the channel goes down but the availability will not.
+	Commands
+		int range > channel-group (channel number) mode on
+			Create a port channel for EC.
+		show int trunk
+		show spanning vlan x
+			Check for port numbers grouping into channels
+		show etherchannel (group number) summary
+		show etherchannel (group number) port-channel
+		show etherchannel (group number) detail
+	Negotiation Protocols
+		Industry standard uses LACP while Cisco uses PAgP
+		LACP
+			Allows for assigning up to 16 ports in EC.
+			This allows for secondary ports (8 ports, based on port priority) to come up when primary ports fail.
+			Port modes
+				Active
+					Will initiate bundling
+				Passive
+					Will wait for other end to initiate bundling.
+					*If both ports is set to passive, bundling will not join.
+		PAgP
+			Dynamically changes port speed and duplex, etc when one port is changed.
+			Port modes
+				Desirable
+					Initiate bundling with a remote port
+				Auto
+					Waits port on other end of trunk to initiate bundling
+					*If both ports is set to auto, bundling will not join.
+		Commands
+			channel-group (group number) mode active/passive/desirable/auto
+			show int port-channel (group number)
