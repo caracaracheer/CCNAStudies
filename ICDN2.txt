@@ -297,6 +297,7 @@ OSPF
 	DR/BDR
 		When a OSPF router detects a change in the network, the router sends a multicast to 224.0.0.6 (all designated router addr) where the DR and BDR will hear it.
 		The DR then sends a multicast to 224.0.0.5 (all OSPF router addr). The BDR updates its OSPF database and standby to step into DR role but only DR sends the multicast.
+		If you do not want BDRs to form, you can set the router OSPF priority to 0
 		?In a broadcast segment, one router will become the DR, another the BDR and the others routers?.
 		Election Process
 			All routers interfaces with an OSPF interface priority of 1 and higher are eligible to participate in the election. The router with the highest interface priority is the elected DR.
@@ -306,6 +307,9 @@ OSPF
 		The RID of a router will be the highest IP address assigned to a loopback interface, regardless of whether the loopback is OSPF-enabled.
 		If there is no loopback, the RID will be the highest IP address assigned to a physical interface.
 		Also known as the neighbor ID.
+		Commands
+			router-id (RID) >> clear ip ospf process
+				Create a manual RID
 	Area
 		Every network segment added to OSPF must be placed into an area via the network command.
 		The network comand won't be accepted by the router unless you specify the area for that segment.
@@ -316,6 +320,8 @@ OSPF
 			Enable OSPF on interface
 			The number specified with router ospf is the OSPF process number.
 			Multiple OSPF processes can be run on a single router.
+		neighbor (neighbor ip address)
+			NBMA networks require router to have IP address of each of their neighbors. Configure on hub in a hub and spoke network.
 		show ip ospf database
 		show ip ospf neighbor
 		show ip ospf int
@@ -393,3 +399,25 @@ OSPF Multi Area (Explained)
 	Routers in non-0 areas are called internal routers.
 	Routers that connect to a non-OSPF routing protocol network are called Autonomous System Boundary Router
 		i.e. Routers that connect to public internet
+
+EIGRP
+	Hybrid protocol, have characteristics of link state and distance vector protocol.
+	EIGRP intially exchanges full routing tables
+	Thereafter an EIGRP router will send an update (only the changes) only when there is a change in the network.
+	Rapid convergence as backup routes are calculated before they are needed and can take the role of a primary route immediately.
+	Compatibility
+		Multiprotocol support
+		IP, IPX, AppleTalk
+		VLSM/CIDR support
+	Considers bandwidth and delay when calculating routes instead of RIP's hop count.
+	EIGRP have to form adjacencies and uses hello packets (multicast to 224.0.0.10) to establish and maintain neighbor relationships.
+		Reliable Transport Protocol is used to handle the transport of messages between EIGRP routers.
+	EIGRP have autonomous systems (similar to areas in OSPF) identify routers that belong to the same logical group.
+		EIGRP speakers that are in separate AS cannot become neighbors.
+	Adjacency
+		Both routers must have same:
+			Authentication config
+			Subnet
+			K-values
+		Hello timers and dead timers do not need to match.
+		Once the adjacency is formed, it is kept alive by hello packets and if hello packets stop coming, adjacency is dropped.
