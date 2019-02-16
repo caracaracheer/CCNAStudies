@@ -421,3 +421,12 @@ EIGRP
 			K-values
 		Hello timers and dead timers do not need to match.
 		Once the adjacency is formed, it is kept alive by hello packets and if hello packets stop coming, adjacency is dropped.
+	Tables
+		Route table
+			Stores best and successor routes
+			Stores best route to each remote network the router knows of
+		Topology table
+			Stores successors and feasible successor routes
+			Keeps all known valid, loop-free routes to each remote network the router knows of.
+		Neighbor table
+			Stores information on EIGRP router neighbors

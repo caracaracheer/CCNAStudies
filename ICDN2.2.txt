@@ -1,0 +1,16 @@
+First Hop Redundancy Protocol
+	Summary
+		Host to next ip address (i.e. router gateway) is the first hop
+		If the first hop goes down (i.e. router), the hosts that use that router will go offline.
+		FHRP allows hosts to switch to another router quickly so that they remain online.
+	Protocols
+		HSRP
+			Active routers and standby routers.
+			Often, devices involved in HSRP deployment are L3 switches, not pure routers.
+			However, the theory and commands are the same as on a router.
+			1. Routers are placed into a router group
+			2. One of the routers in the group is selected as the active router and another is chosen as the standby router
+			IP and MAC addresses of physical routers in the group are unknown to downstream devices i.e. hosts
+			The hosts communicates through a virtual router that have a MAC and IP address of its own.
+
+Point 2 Point WANs
