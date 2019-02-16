@@ -250,3 +250,77 @@ Rapid Spanning-Tree Protocol
 			Configure to use RSTP.
 		show spanning summary
 			Check for "switch is in rapid-pvst mode"
+
+OSPF
+	Link state protocol vs a distance vector protocol like RIP.
+	The drawback of a distance vector protocol is the regular routing updates. The updates also sends the full routing table which takes up bandwidth.
+	Distance vector protocols also have slow convergence compared to OSPF. Slow convergence can lead to routing loops.
+	EIGRP send full updates only when adjacency is built and only sends routing updates.
+	*Link state protocols exchange Link State Updates (LSUs) that contains Link State Advertisements (LSAs) when they form adjacencies.
+	These LSAs are placed into a link state database.
+	Once the OSPF network have reached convergence, they use a synchronized link state database.
+	OSPF use Dijkstra to create a routing table using the contents of the database.
+		Dijkstra is extremely fast and doesn't allow routing loops to form.
+	Link State Advertisements (LSAs)
+		LSAs are assigned sequence numbers for routers to check for the most recent information.
+		When a router receives and LSA, it checks the OSPF database for any pre-existing entries.
+		If there are none, it creates one in the database and floods the LSA out every OSPF-enabled interface except the interface the LSA came in on. (Similar to Split Horizon)
+		If there are entries, it checks for sequence number.
+		If the sequence number is the same, the LSA is ignored.
+		If the sequence number is lower, the router ignores the update and sends a LSU back to the original sender to update the routing table.
+		If the sequence number is higher, the router adds  the LSA to its database and sends an ACK back to original sender. It also floods the LSA and update its own routing table by running Dijkstra against the updated database.
+		Once the initial LSAs exchange takes place, there will not be another exchange until the network topology changes.
+		An OSPF router will send out a summary LSA every 30 minutes.
+	Adjacency
+		OSPF routers must become neighbors by forming adjacencies.
+		Routers must agree on area number, hello and dead timer settings and whether the area is a stub area.
+		Dead timer, hello timer and network mask must match to allow for neighbors to form.
+		If link authentication is configured, it must be set up both sides of the adjacency.
+		Adjacency states
+			Down: No hellos received yet from neighbor
+			Attempt: Unicast hello packets are being sent to the neighbor. (Only on hub router in NBMA network (OSPF serial connections over a cloud))
+			Init: Router multicasts a hello packet to 224.0.0.5
+			2-Way: Router that received hello in Init stage now unicast (to source address) a hello back indicating willingness to become neighbors.
+			Exstart: Once the Designated Router DR/ Backup Designated Router BDR election occurs, start exchanging link state database info. Router with highest (OSPF Router ID) RID will begin exchange and increment initial sequence number.
+			Exchange: Database Descriptor (DBD) packets are exchanged which contain a description of the link state database.
+			Loading: Router now sent LSR packets to the almost-neighbor
+			Full: Router databases are synced and adjacency is formed.
+	Hello Packet
+		OSPF relies on hello packets for 1. Dynamic discovery of potential neighbors. 2. Renewing existing adjacencies.
+		Sent on regularly scheduled intervals. 10s on Ethernet-based segments and 30s on Serial links.
+		OSPF Hellos have a destination IP of 224.0.0.5.
+	Timers
+		Hello timer checks for neighbors
+		Dead timer is the interval during which at least one hello packet must be received from a neighbor before the router declares that neighbor as down
+		Commands
+			ip ospf hello-interval (seconds)
+	DR/BDR
+		When a OSPF router detects a change in the network, the router sends a multicast to 224.0.0.6 (all designated router addr) where the DR and BDR will hear it.
+		The DR then sends a multicast to 224.0.0.5 (all OSPF router addr). The BDR updates its OSPF database and standby to step into DR role but only DR sends the multicast.
+		?In a broadcast segment, one router will become the DR, another the BDR and the others routers?.
+		Election Process
+			All routers interfaces with an OSPF interface priority of 1 and higher are eligible to participate in the election. The router with the highest interface priority is the elected DR.
+			If both priority is the same, the tiebreaker will be the RID.
+			A single router cannot be both the DR and BDR.
+	RID
+		The RID of a router will be the highest IP address assigned to a loopback interface, regardless of whether the loopback is OSPF-enabled.
+		If there is no loopback, the RID will be the highest IP address assigned to a physical interface.
+		Also known as the neighbor ID.
+	Area
+		Every network segment added to OSPF must be placed into an area via the network command.
+		The network comand won't be accepted by the router unless you specify the area for that segment.
+		Area 0 is the backbone area of an OSPF deployment and every non-backbone area in the network must have an interface on a router that has a physical or logical connection to Area 0.
+		[Areas are basically smaller network segments. The smaller the network segment, the less it have to talk to other routers when something changes, resulting in less bandwidth usage.]
+	Commands
+		router ospf >> network (network ip e.g. 10.1.1.0) (wildcard e.g. if network needs to be in 10.1.1, wild card is 0.0.0.255) area (area id e.g. 0)
+			Enable OSPF on interface
+			The number specified with router ospf is the OSPF process number.
+			Multiple OSPF processes can be run on a single router.
+		show ip ospf database
+		show ip ospf neighbor
+		show ip ospf int
+		show ip route ospf
+		debug ip ospf adj
+		debug ip ospf hello
+			R = received
+			C = configured
