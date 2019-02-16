@@ -312,7 +312,7 @@ OSPF
 		Area 0 is the backbone area of an OSPF deployment and every non-backbone area in the network must have an interface on a router that has a physical or logical connection to Area 0.
 		[Areas are basically smaller network segments. The smaller the network segment, the less it have to talk to other routers when something changes, resulting in less bandwidth usage.]
 	Commands
-		router ospf >> network (network ip e.g. 10.1.1.0) (wildcard e.g. if network needs to be in 10.1.1, wild card is 0.0.0.255) area (area id e.g. 0)
+		router ospf (process id e.g. 1) >> network (network ip e.g. 10.1.1.0) (wildcard e.g. if network needs to be in 10.1.1, wild card is 0.0.0.255) area (area id e.g. 0)
 			Enable OSPF on interface
 			The number specified with router ospf is the OSPF process number.
 			Multiple OSPF processes can be run on a single router.
@@ -324,3 +324,72 @@ OSPF
 		debug ip ospf hello
 			R = received
 			C = configured
+
+OSPF (Explained)
+	Is a:
+		Interior gateway protocol i.e. designed to be used a single autonomous system
+		Link state routing protocol.
+	Routers learn every router and subnet in a network.
+	Routers send LSAs that contain subnet, router, etc information.
+	Once routers LSAs have been flooded, routers save these information in their Link State Databases.
+
+	DR/BDR
+		In the same network segment, routers will only become full-neighbors with DR/BDRs
+			This means that they will only receive the full routing updates with DR/BDRs.
+			The other neighbors will be in the 2 way stage which ignores updates.
+		If a router in a network goes down, it lets the other routers know that it is down. The routers then tell each other that that router is down.
+			This could lead to a messy situation.
+			DR/BDR are there to tell routing updates to other routers.
+		DR/BDR is elected based highest OSPF priority. Tiebreakers: Highest RID
+
+	Steps
+		Become neighbors
+			Two routers running OSPF on the same link agree to form a neighbor relationship
+		Exchange database information
+			The neighbor routers swap their LSDB information with each other
+		Choose the best routes
+			Router choose the best routes to add to its routing table using Dijkstra on its database.
+	In-depth
+		Each router have a Router ID (RID) in the format of a IPv4 address.
+			RID can be set by (in order): Manually assigning / Highest loopback IP / Highest non loopback IP
+			Down stage
+				Router 1 will reach out to others with a hello message.
+				Hello message contains router's RID as well as known neighbors.
+					It is used to check whether routers are still up.
+				Router 2 receives message and check for requirements i.e. Timers, area ID, subnet, authentication config, sub area flag, unique RID
+			Init stage
+				Router 2 replies with a hello message that contains its RID as well as the Router 1's RID.
+				Router 1 reads its own RID and moves to the 2 way stage.
+			2 way stage
+				Router 1 sends a hello message with Router 2 RID.
+				Router 2 then enters 2 way stage.
+			Exstart stage
+				Router selects slave and master based on RID
+				Master controls sequence numbers and start exchange process.
+			Exchange stage
+				Router sends each other full LSAs (Database Description DBDs)
+				Each router checks the DBD and request information that they don't have (Link State Request)
+				Router sends Link State Update containing relevant information
+				Router then sends LSAck to complete the transaction.
+			Choose best route
+				Router checks best route by doing a cost calculation
+					Cost calculation is based on reference bandwidth divided by interface bandwidth
+						Default ref bandwidth: 100000Kbps
+					Serial
+						1544 Kbps > 64 Cost
+					Ethernet
+						10000 Kbps > 10 Cost
+					FastEthernet
+						100000 Kbps > 1 Cost
+OSPF Multi Area (Explained)
+	OSPF Multi areas segments a big OSPF network to smaller parts, reducing size of routing tables, link state databases and contain update messages.
+	Recommended to have 50 routers max per area.
+	OSPF areas require a unique network subnet to themselves.
+	Area 0 or backbone area, is an area which all areas need to be joined up to.
+	Interfaces that connect area 0 to the other areas are called Area Border Routers (Routers that are in 2 areas).
+		These border routers forward packets to their respective area networks.
+		These routers send a network subnet summary to area 0.
+		These routers also send area 0 network subnet summary to their respective area networks.
+	Routers in non-0 areas are called internal routers.
+	Routers that connect to a non-OSPF routing protocol network are called Autonomous System Boundary Router
+		i.e. Routers that connect to public internet
