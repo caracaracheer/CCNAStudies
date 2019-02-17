@@ -14,3 +14,147 @@ First Hop Redundancy Protocol
 			The hosts communicates through a virtual router that have a MAC and IP address of its own.
 
 Point 2 Point WANs
+	WANs can be connected using a DTE/DCE cable.
+		DCE cable needs to supply a clock rate to DTE side
+	
+	Encapsulation Protocols
+		Encapsulation must match on both ends else PTP link will be physically up and logically down.
+		HDLC
+			Multiprotocol support (cHDLC)
+		PPP
+			Authentication via Password Authentication Protocol and Challenge Handshake Authentication protocol
+				You can have one router authenticate another only. Two way authentication need not be set.
+			Support for error detection and error recovery features
+			Multiprotocol support
+			Commands
+				encap ppp
+	Commands
+		show controller serial x
+			Check for DTE, DCE
+
+Router on a stick
+	In the past, L2 switch had to connect to L3 routers to do cross VLAN communication.
+	Nowadays, the L3 routers functionality are added to L2 switches to allow for the same behavior
+		Commands
+			int vlan (vlan number) >> ip address (ip address as a gateway) (subnet mask)
+	E.g. Two vlans on a switch.
+		The vlans cannot communicate to each other.
+		A route need to be constructed.
+		This can be done by connecting a switch to a router by building a trunk.
+		The host talks to the switch which talks to the router which constructs a route back to the destination.
+		E.g. Switch interface to router is a trunk and router interface to switch is FA0/0
+		Router can configure subinterfaces on FA0/0 > FA0/0/10 for VLAN10 & FA/0/0/20 for VLAN20
+			IP addresses must be configured to each subinterfaces and tagged to respective VLAN.
+			Commands
+				int (interface x.vlanNumber(organization purpose) e.g. fast 0/0.1) >> encapsulation dot1q (vlan id e.g. 1)
+Quality of Service
+	QoS is about deciding which traffic is more important than other traffic and taking the actions to queue, transmit and handle said traffic.
+	Traffic by default is using FIFO, no priority is configured.
+		FIFO could be a problem if a long traffic flow is formed, where only one particular traffic is sucking up the queue.
+	Flow-based WFQ
+		This protocol pushes low bandwidth conversation to the front so that they can be completed while high bandwidth conversations are pushed into the background.
+		*Running encryption or tunneling will interfere with WFQ.
+		Low Latency Queueing
+			LLQ is an "add-on" to CBWFQ that creates a strict priority queue for delay sensitive traffic (mostly voice traffic).
+		Round Robin Queueing
+			RRQ make sure that no single queue gets too much attention.
+			Each queue is given attention in a round robin format.
+		Weighted Round Robin Queueing
+			WRRQ allows for priority to certain queues by assigning weight to each queue. Those weights are used to determine the amount of bandwidth assigned to each queue.
+		Deficit Weight Round Robin Queueing
+			When a queue goes over its transmission limit, the bandwidth is deducted from its max transmission in the next cycle
+		Distributed WFQ
+		Class-based WFQ
+		Distributed class-based WFQ
+		Queuing Problems
+			Tail Drop
+				Some packets will be dropped as they cannot fit into the queue.
+			TCP Synchronization
+				When packets are dropped, the sending device will slow its transmission rate.
+				When the congestion lessens, the sender then increases its transmission rate which results in network congestions again.
+				This results in the sender always sending too little or too much traffic. The transmission speed is never "just right"
+				Solution:
+					Random Early Detection
+						RED will proactively drop packets before the queue gets full, though which packets get dropped is random
+					Weight Random Early Detection
+						WRED uses the packet's IP Precedence (IP Prec) or Differentiated Services Code Point (DSCP) to make a decision on which packets to drop.
+
+Simple Network Management Protocol
+	SNMP is used to carry network management info from one network device to another.
+	In a SNMP context, the agents are considered the servers while the Managers are considered the clients
+	SNMP Manager
+		Monitoring software, typically installed on a server called a Network Management Station
+		SNMP poll agents over UDP port 161 and these messages are GETs and SETs.
+
+		There are several different GETs, with the most common being GET Request and GET Response.
+		SNMP manager does a GET Request to agents and receives a GET Reply back.
+
+		A SET is a request from the manager to the agent, request that certain variable be set.
+
+		One problem is polling agents too often can suck up bandwidth.
+		To solve this problem, SNMP Traps can be set which allows agents to send messages when critical events happen only.
+		SNMP Informs are similar to Traps but require ACKs from the manager
+	SNMP Agent
+		Software installed on the devices being monitored
+	Management Information Base
+		The database on the agent that contains variables regarding the Agent
+	SNMP Versions
+		Community string is used as a user account that allows access to a router or other devices statistics.
+		1
+			Version 1 users are assigned to 1 of 2 communities, a read-only or read-write community.
+			A clear-text community string (combination of the password and authority level) is transmitted which is a security flaw.
+		2c
+			v2 used the same clear-text community string concept.
+			SNMP Informs were first made available on v2.
+		3
+			v3 brought authentication and encryption options.
+			v3 password is hashed.
+	Commands
+		snmp-server community (access list) (ro/rw [readonly/readwrite]) (access list)
+		snmp-server group (groupname) (SNMP version) (authentication method)
+			authentication and privacy
+		snmp-server user (username) (groupname) (SNMP version) (authentication method) (encryption algo) (authentication password for user)
+SLA
+	Service Level Agreement
+		An agreement from providers to provide a level of service.
+		Can involve things like packet loss to levels of jitter to Ethernet issues to smooth round-trip time.
+		Source and responder
+			Controlling stage
+				Source sends control packets to the responder via UDP to create a control connection, an agreement on the rules of communication.
+				If the responder agrees, it will send a message back to the source to create a control connection.
+			Probing stage
+				Before the packets are echoed back the source, the responder timestamps the packets.
+				Once the source receives the timestamped replies, it knows it can communicate with the responder along with knowing certain metrics i.e. trip time
+		Commands
+			show ip sla
+			ip sla (entry number) >>
+	Commited Information Rate
+		The CIR is a guarantee given to the customer by the service provider where the provider guarantees a "X" amount of bandwidth.
+SPAN
+	A network analyzer (sniffer) can be connected to a switch port.
+	There is a need to configure the switch to copy traffic to that port while taking not to copy too much traffic.
+	There is also an option of copying traffic sent to the host, sent by the host or both. "Both" is the default.
+	SPAN allows us to define traffic that should be copied from a source to a destination port.
+	Commands
+		show monitor
+		monitor session (SPAN session number) source int (interface range)
+		monitor session (SPAN session number) destination int (interface range)
+AAA
+	Authentication, authorization and accounting
+	AAA can be enabled by:
+		1. aaa new-model
+		2. Configure location of TACACS+ or RADIUS server
+		3. Configure a shared encryption key that is shared between client and server.
+	A self contained AAA deployment is one whereby there is no external devices involved.
+	AAA protocols
+		TACACS+
+			Cisco-proprietary TCP-based protocol
+			Encrypts entire packet
+			Runs each "A" separately
+		RADIUS
+			UDP-based protocol
+			Encrypts only the password in the initial client-server packet
+			Combines authentication and authorization processes.
+			Cannot control authorization level of users
+	Commands
+		aaa new-model
