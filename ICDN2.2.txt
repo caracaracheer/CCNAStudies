@@ -141,6 +141,8 @@ SPAN
 		monitor session (SPAN session number) destination int (interface range)
 AAA
 	Authentication, authorization and accounting
+		Accounting
+			Used to track network resource utilized by authenticated user.
 	AAA can be enabled by:
 		1. aaa new-model
 		2. Configure location of TACACS+ or RADIUS server
@@ -169,6 +171,7 @@ AAA
 		aaa authentication login default group (radius/tacacs+) group (radius/tacacs+)
 			Use servers for authentication for logins
 			Can configure backup methods on the same line (up to 4)
-				none method can be put in to avoid login without authentication
+				none method can be put in to allow login without authentication
 		line vty 0 15 >> login authentication default
 			Apply AAA authentication to telnet
+		aaa authorization (type of authorization to allow)
