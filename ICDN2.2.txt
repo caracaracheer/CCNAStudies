@@ -158,3 +158,17 @@ AAA
 			Cannot control authorization level of users
 	Commands
 		aaa new-model
+		[require aaa new-model]tacacs server (name)
+			>>
+				key 7 (key)
+				address ipv4 (tacacs server ip address)
+		radius server (server name)
+			>>
+				key (key)
+				address ipv4 (radius server ip address)
+		aaa authentication login default group (radius/tacacs+) group (radius/tacacs+)
+			Use servers for authentication for logins
+			Can configure backup methods on the same line (up to 4)
+				none method can be put in to avoid login without authentication
+		line vty 0 15 >> login authentication default
+			Apply AAA authentication to telnet
